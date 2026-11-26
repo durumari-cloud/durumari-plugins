@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>두루마리 Context</title><style>
+/* UI v3. 공용 표면(.w-card .w-chip .w-lines …)은 activity_assets/widget.css 에 있고 렌더할 때 이 위에 합쳐진다.
+   이 블록에는 결과 카드와 공간·Context 탐색 화면만의 배치를 둔다. 폭 기준은 컨테이너(body)다. */
+*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}
+/* 목록 줄 안의 제목과 보조 글: 접근성 이름에서 두 줄이 띄어 읽히도록 블록으로 둔다(스타일시트가 없어도 같다). */
+.w-line .row-text{display:block}.w-line strong,.w-line small{display:block}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.result{gap:10px}
+#details{display:grid;gap:8px;min-width:0}
+#details:empty{display:none}
+#details p{font-size:13px;color:var(--text-muted);line-height:1.6}
+#details p.w-title{color:var(--text);font-size:14px}
+#note{color:var(--text-muted);font-size:12px}
+.document-result{gap:14px}
+.document-result h2{font-size:18px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.document-result .reader-surface{display:grid;gap:12px;min-width:0}
+.document-result .document-body{margin:0}
+.document-result .document-body>section{padding-top:12px;border-top:1px solid var(--border-subtle)}
+.document-result .document-body>section:first-child{padding-top:0;border-top:0}
+.document-result .document-body>section>h3{margin:0 0 8px;font-size:15px}
+.document-result .document-body>p{margin:0}
+.document-result .section-ref{display:block;overflow-wrap:anywhere}
+.document-result .meta-line{display:flex;flex-wrap:wrap;gap:6px 10px;color:var(--text-muted);font-size:12px}
+.workspace-error:not(:has(>:not([hidden]))){display:none}
+.workspace-error{display:grid;gap:8px;justify-items:start}
+.workspace-error p{width:100%}
+/* 공간 · Context 목록 · 본문. 좁으면 위아래로 쌓고, 본문을 열면 본문만 보인다. 넓으면 세 칸. */
+.workspace{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);align-items:start}
+.pane{min-width:0}
+.pane-title{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-2)}
+.pane-title h2{font-size:15px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.pane .list{display:grid;gap:2px;max-height:352px;overflow:auto;margin:0 -6px;padding:0 6px}
+.project-pane .list{max-height:200px}
+.pane>button{justify-self:stretch}
+.reader-surface{display:grid;gap:12px;min-width:0}
+.reader h2{font-size:18px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.reader-meta{font-size:12px;color:var(--text-muted)}
+.document-body{overflow-wrap:anywhere;min-width:0}
+.document-body.markdown,.document-body>.markdown{max-width:72ch}
+.mobile-back{display:inline-flex;align-items:center;gap:var(--space-2);justify-self:start;min-height:36px;padding:0 12px 0 8px}
+.workspace[data-reading=true] .project-pane,.workspace[data-reading=true] .context-pane{display:none}
+.workspace:not([data-reading=true]) .reader{display:none}
+.workspace[data-bound=true] .project-pane{display:none}
+@container widget (min-width:880px){
+ .workspace,.workspace[data-bound=true]{grid-template-columns:240px 280px minmax(0,1fr)}
+ .workspace[data-bound=true]{grid-template-columns:280px minmax(0,1fr)}
+ .workspace[data-reading=true] .project-pane,.workspace[data-reading=true] .context-pane,.workspace:not([data-reading=true]) .reader{display:grid}
+ .workspace[data-bound=true] .project-pane{display:none}
+ .mobile-back{display:none}
+ .pane .list{max-height:560px}
+}
+</style></head><body><main aria-label="두루마리 Context 탐색">
+<header class="top"><div class="brand"><img class="asset-icon" src="__DURUMARI_ICON_DOC__" alt="" width="20" height="20"><h1>두루마리</h1></div><small id="connection-label">Context 작업 공간</small></header>
+<section class="result w-card" aria-label="Context 작업 결과"><p id="status" class="w-status" role="status" aria-live="polite">화면 연결 중</p><div id="details"></div><p id="error" class="w-callout" role="alert" hidden></p><small id="note">결과 카드는 해당 작업 시점의 기록입니다.</small><div class="actions"><button id="browser" hidden>브라우저에서 결과 보기</button><button id="projects" hidden>공간 선택</button><button id="retry" hidden>결과 다시 확인</button></div></section>
+<section id="document-result" class="document-result w-card" aria-label="문서 원문" hidden><div class="reader-surface"><h2 id="result-document-title"></h2><p id="result-document-meta" class="muted"></p><p id="result-document-coverage" class="w-callout"></p><article id="result-document-body" class="document-body"></article><button id="result-document-more" hidden>본문 더 읽기</button><p id="result-document-error" class="w-callout" role="alert" hidden></p></div></section>
+<div class="workspace-error"><p id="workspace-error" class="w-callout" role="alert" hidden></p><button id="navigation-retry" hidden>다시 시도</button></div>
+<section id="workspace" class="workspace" aria-label="공간과 Context" hidden>
+<nav class="pane project-pane w-card" aria-label="공간 탐색"><div class="pane-title"><h2>공간</h2></div><label for="project-search" class="sr-only">공간 찾기</label><input id="project-search" type="search" placeholder="공간 이름으로 찾기" maxlength="100"><div id="project-list" class="list w-lines"></div><button id="projects-more" hidden>공간 더 보기</button></nav>
+<section class="pane context-pane w-card" aria-label="Context 목록"><div class="pane-title"><h2 id="context-heading">Context</h2><span id="context-count" class="muted"></span></div><label for="context-search" class="sr-only">Context 찾기</label><input id="context-search" type="search" placeholder="제목으로 찾기 (두 글자 이상)" maxlength="200"><div id="catalog" class="list w-lines"><p class="empty">공간을 선택해 주세요.</p></div><button id="contexts-more" hidden>Context 더 보기</button></section>
+<section class="pane reader w-card" aria-label="Context 본문"><div class="reader-surface"><button id="reader-back" class="mobile-back"><img class="asset-icon asset-back" src="__DURUMARI_ICON_BACK__" width="20" height="20" alt="">목록으로</button><h2 id="reader-heading">Context를 선택해 주세요</h2><p id="reader-meta" class="reader-meta">목록에서 문서를 열면 이곳에 본문이 표시됩니다.</p><article id="document" class="document-body"></article><button id="document-more" hidden>본문 더 읽기</button></div></section>
+</section></main><script id="durumari-ui-config" type="application/json">{}</script><script id="durumari-workspace-runtime">
+// A view-local state machine. Scope is supplied explicitly; never infer a chat
+// from a process, storage, project alone, or neighbouring tool invocations.
+const workspaceRuntime=(()=>{
+ const validId=value=>typeof value==='string'&&value.length>0&&value.length<=200;
+ const validScope=scope=>scope&&['session_ref','workspace_id','project_id'].every(key=>validId(scope[key]));
+ const sameScope=(a,b)=>validScope(a)&&validScope(b)&&['session_ref','workspace_id','project_id'].every(key=>a[key]===b[key]);
+ function create(scope){if(!validScope(scope))throw new Error('workspace_scope_required');return{scope:{session_ref:scope.session_ref,workspace_id:scope.workspace_id,project_id:scope.project_id},events:new Map(),documents:new Map(),edges:new Map(),incomplete:false,outcome:'pending'};}
+ function document(value){
+  if(!value||!validId(value.id)||!validId(value.project_id)||!Number.isSafeInteger(value.revision)||value.revision<1||value.error)return null;
+  const outline=value.coverage==='outline';
+  const sections=(Array.isArray(value.sections)?value.sections:[]).slice(0,100).filter(section=>section&&typeof section==='object').map(section=>({id:typeof section.id==='string'?section.id:'',title:typeof section.title==='string'?section.title:'',sha256:typeof section.sha256==='string'?section.sha256:'',text:!outline&&typeof section.text==='string'?section.text:''}));
+  return{id:value.id,project_id:value.project_id,revision:value.revision,title:typeof value.title==='string'?value.title:'Context',coverage:typeof value.coverage==='string'?value.coverage:'document_page',partial:value.truncated===true,sections,after:typeof value.next_after==='string'?value.next_after:null};
+ }
+ function apply(state,event){
+  if(!event||!sameScope(state.scope,event.scope)||!validId(event.event_id)||!Number.isSafeInteger(event.sequence)||event.sequence<1||event.sequence>10000||state.events.has(event.event_id)||state.events.size>=1000)return state;
+  if([...state.events.values()].some(item=>item.sequence===event.sequence))return state;
+  if(!['discovered','read','relation','status'].includes(event.type))return state;
+  let payload;
+  if(event.type==='read'||event.type==='discovered'){
+   payload=document(event.document);if(!payload||payload.project_id!==state.scope.project_id)return state;
+   if(!state.documents.has(payload.id)&&state.documents.size>=200)return state;
+  }else if(event.type==='relation'){
+   const edge=event.edge;if(!edge||!validId(edge.from)||!validId(edge.to)||!['document','traversal'].includes(edge.kind)||typeof edge.label!=='string'||edge.label.length>200)return state;
+   payload={from:edge.from,to:edge.to,kind:edge.kind,label:edge.label};
+  }else{
+   if(!['pending','retrieved','stored','failed','forbidden','unknown','canceled','expired'].includes(event.outcome))return state;
+   payload=event.outcome;
+  }
+  const events=new Map(state.events);events.set(event.event_id,{sequence:event.sequence,type:event.type,payload});
+  // Rebuild in causal order: delayed discovery must not downgrade a read.
+  const documents=new Map(),edges=new Map();let outcome='pending',expected=1,incomplete=false;
+  for(const item of [...events.values()].sort((a,b)=>a.sequence-b.sequence)){
+   if(item.sequence!==expected)incomplete=true;expected=item.sequence+1;
+   if(['read','discovered'].includes(item.type)){
+    const previous=documents.get(item.payload.id);
+    if(item.type==='read'||!previous)documents.set(item.payload.id,{...item.payload,state:item.type==='read'?'read':'discovered'});
+   }else if(item.type==='relation')edges.set(JSON.stringify([item.payload.from,item.payload.to,item.payload.kind,item.payload.label]),item.payload);
+   else if(item.type==='status'&&!['forbidden','failed','unknown','canceled','expired'].includes(outcome))outcome=item.payload;
+  }
+  // Do not expose an edge until both endpoints have been discovered in this scope.
+  for(const [key,edge]of edges)if(!documents.has(edge.from)||!documents.has(edge.to))edges.delete(key);
+  if(['forbidden','failed','unknown','canceled','expired'].includes(outcome)){
+   documents.clear();edges.clear();for(const [id,item]of events)if(item.type!=='status')events.set(id,{sequence:item.sequence,type:'redacted',payload:null});
+  }
+  return{scope:state.scope,events,documents,edges,incomplete,outcome};
+ }
+ function mode(state){return state.documents.size>1?'graph':state.documents.size===1?'document':'empty';}
+ return{create,apply,document,mode,sameScope};
+})();
+</script><script id="durumari-markdown">
+// Context bodies use the web reader's rules (web/src/features/cloud-context/MarkdownView.tsx): the same
+// block and inline grammar, heading levels and link rule. The widget has no bundler, so the rules are
+// repeated here; keep both in step. Document text only ever becomes text nodes, never parsed HTML.
+// Mermaid and diagram fences stay code blocks in the widget.
+const durumariMarkdown=(()=>{
+ const headingLine=/^ {0,3}(#{1,6})(?:[ \t]+|$)(.*)$/;
+ const fenceLine=/^( {0,3})(`{3,}|~{3,})(.*)$/;
+ const fenceClose=/^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+ const ruleLine=/^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+ const quoteLine=/^ {0,3}> ?(.*)$/;
+ const itemLine=/^( *)([-*+]|\d{1,9}[.)])(?:[ \t]+(.*))?$/;
+ const separatorLine=/^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+ const maxDepth=12,maxInlineDepth=8;
+ const indent=line=>line.length-line.trimStart().length;
+ const blank=line=>line.trim()==='';
+ function cells(line){
+  let body=line.trim();
+  if(body.startsWith('|'))body=body.slice(1);
+  if(body.endsWith('|')&&!body.endsWith('\\|'))body=body.slice(0,-1);
+  return body.split(/(?<!\\)\|/).map(cell=>cell.trim().replace(/\\\|/g,'|'));
+ }
+ const alignment=cell=>cell.startsWith(':')?cell.endsWith(':')?'center':'left':cell.endsWith(':')?'right':undefined;
+ const fenceOpen=line=>{const match=fenceLine.exec(line);return match&&!(match[2][0]==='`'&&match[3].includes('`'))?match:null;};
+ const tableAt=(lines,at)=>lines[at].includes('|')&&at+1<lines.length&&lines[at+1].includes('|')&&separatorLine.test(lines[at+1])&&cells(lines[at]).length===cells(lines[at+1]).length;
+ const headingText=raw=>{
+  const text=raw.trim();let end=text.length;
+  while(end>0&&text[end-1]==='#')end--;
+  return end===0?'':end<text.length&&/[ \t]/.test(text[end-1])?text.slice(0,end).trim():text;
+ };
+ const startsBlock=(lines,at)=>headingLine.test(lines[at])||!!fenceOpen(lines[at])||ruleLine.test(lines[at])||quoteLine.test(lines[at])||itemLine.test(lines[at])||tableAt(lines,at);
+ function parse(lines,depth){
+  if(depth>maxDepth)return[{kind:'paragraph',lines:lines.filter(line=>!blank(line)).map(line=>line.trim())}];
+  const blocks=[];let at=0;
+  while(at<lines.length){
+   const line=lines[at];
+   if(blank(line)){at++;continue;}
+   const heading=headingLine.exec(line);
+   if(heading){blocks.push({kind:'heading',level:heading[1].length,text:headingText(heading[2])});at++;continue;}
+   const fence=fenceOpen(line);
+   if(fence){
+    const marker=fence[2],body=[];
+    for(at++;at<lines.length;at++){
+     const close=fenceClose.exec(lines[at]);
+     if(close&&close[1][0]===marker[0]&&close[1].length>=marker.length){at++;break;}
+     body.push(lines[at].slice(Math.min(indent(lines[at]),fence[1].length)));
+    }
+    blocks.push({kind:'code',text:body.join('\n')});continue;
+   }
+   if(ruleLine.test(line)){blocks.push({kind:'rule'});at++;continue;}
+   if(quoteLine.test(line)){
+    const inner=[];
+    while(at<lines.length&&quoteLine.test(lines[at]))inner.push(quoteLine.exec(lines[at++])[1]);
+    blocks.push({kind:'quote',blocks:parse(inner,depth+1)});continue;
+   }
+   const first=itemLine.exec(line);
+   if(first){
+    const base=first[1].length,ordered=/\d/.test(first[2]),items=[];
+    const sameLevel=match=>!!match&&match[1].length<=base+1&&/\d/.test(match[2])===ordered;
+    while(at<lines.length){
+     const current=lines[at],match=itemLine.exec(current);
+     if(sameLevel(match)&&!ruleLine.test(current)){items.push([match[3]??'']);at++;continue;}
+     if(blank(current)){
+      let next=at+1;
+      while(next<lines.length&&blank(lines[next]))next++;
+      if(next<lines.length&&(indent(lines[next])>=base+2||sameLevel(itemLine.exec(lines[next]))&&!ruleLine.test(lines[next]))){items.at(-1).push(...lines.slice(at,next).map(()=>''));at=next;continue;}
+      break;
+     }
+     if(indent(current)>=base+2){items.at(-1).push(current.slice(base+2));at++;continue;}
+     if(!blank(lines[at-1])&&!startsBlock(lines,at)){items.at(-1).push(current.trim());at++;continue;}
+     break;
+    }
+    blocks.push({kind:'list',ordered,start:ordered?Number.parseInt(first[2],10):1,items:items.map(item=>parse(item,depth+1))});continue;
+   }
+   if(tableAt(lines,at)){
+    const head=cells(line),align=cells(lines[at+1]).map(alignment),rows=[];
+    for(at+=2;at<lines.length&&!blank(lines[at])&&lines[at].includes('|');at++)rows.push(cells(lines[at]));
+    blocks.push({kind:'table',align,head,rows});continue;
+   }
+   const paragraph=[line.trim()];
+   for(at++;at<lines.length&&!blank(lines[at])&&!startsBlock(lines,at);at++)paragraph.push(lines[at].trim());
+   blocks.push({kind:'paragraph',lines:paragraph});
+  }
+  return blocks;
+ }
+ const escapable=/[!-/:-@[-`{-~]/,wordChar=/[\p{L}\p{N}]/u,spaceChar=/\s/;
+ const linkSyntax=/\[([^[\]\n]*)\]\(([^\s()]*(?:\([^\s()]*\)[^\s()]*)*)(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'))?\)/y;
+ // Only these schemes become links; anything else, including relative and script addresses, stays text.
+ function safeLink(url){try{const parsed=new URL(url);return['http:','https:','mailto:'].includes(parsed.protocol)?parsed.href:undefined;}catch{return undefined;}}
+ function el(tag,children=[]){const node=document.createElement(tag);node.append(...children);return node;}
+ function inline(text,depth=0){
+  const nodes=[],missing=new Set();let plain='',at=0;
+  const push=node=>{if(plain)nodes.push(plain);plain='';nodes.push(node);};
+  const close=(token,from)=>{
+   if(missing.has(token))return-1;
+   for(let end=text.indexOf(token,from);end>=0;end=text.indexOf(token,end+1)){
+    const before=text[end-1]??'',after=text[end+token.length]??'';
+    if(token[0]==='`'){if(before!=='`'&&after!=='`')return end;continue;}
+    if(spaceChar.test(before)||before==='\\'||token.length===1&&(before===token||after===token))continue;
+    if(token[0]==='_'&&wordChar.test(after))continue;
+    return end;
+   }
+   missing.add(token);return-1;
+  };
+  while(at<text.length){
+   const char=text[at];
+   if(char==='\\'&&escapable.test(text[at+1]??'')){plain+=text[at+1];at+=2;continue;}
+   if(char==='`'){
+    let ticks='`';
+    while(text[at+ticks.length]==='`')ticks+='`';
+    const end=close(ticks,at+ticks.length);
+    if(end<0){plain+=ticks;at+=ticks.length;continue;}
+    const body=text.slice(at+ticks.length,end);
+    push(el('code',[body.startsWith(' ')&&body.endsWith(' ')&&body.trim()?body.slice(1,-1):body]));
+    at=end+ticks.length;continue;
+   }
+   if(char==='['||char==='!'&&text[at+1]==='['){
+    const start=char==='!'?at+1:at;linkSyntax.lastIndex=start;
+    const match=linkSyntax.exec(text);
+    if(match){
+     const href=char==='['?safeLink(match[2]):undefined;
+     if(href){const link=el('a',depth<maxInlineDepth?inline(match[1],depth+1):[match[1]]);link.setAttribute('href',href);link.target='_blank';link.rel='noreferrer noopener';push(link);}
+     else plain+=text.slice(at,start)+match[0];
+     at=start+match[0].length;continue;
+    }
+   }
+   if((char==='*'||char==='_')&&depth<maxInlineDepth){
+    const token=text[at+1]===char?char+char:char,after=text[at+token.length]??'';
+    if(after&&!spaceChar.test(after)&&!(char==='_'&&wordChar.test(text[at-1]??''))){
+     const end=close(token,at+token.length+1);
+     if(end>=0){push(el(token.length===2?'strong':'em',inline(text.slice(at+token.length,end),depth+1)));at=end+token.length;continue;}
+    }
+    plain+=token;at+=token.length;continue;
+   }
+   plain+=char;at++;
+  }
+  if(plain)nodes.push(plain);
+  return nodes;
+ }
+ function build(blocks){
+  return blocks.map(block=>{
+   if(block.kind==='heading')return el('h'+Math.min(block.level+2,6),inline(block.text));
+   if(block.kind==='paragraph')return el('p',block.lines.flatMap((line,row)=>row>0?[el('br'),...inline(line)]:inline(line)));
+   if(block.kind==='list'){const list=el(block.ordered?'ol':'ul',block.items.map(item=>el('li',build(item))));if(block.ordered&&block.start!==1)list.start=block.start;return list;}
+   if(block.kind==='table'){
+    const cell=(tag,text,column)=>{const node=el(tag,inline(text));if(block.align[column])node.style.textAlign=block.align[column];return node;};
+    const table=el('table',[el('thead',[el('tr',block.head.map((text,column)=>{const node=cell('th',text,column);node.scope='col';return node;}))])]);
+    if(block.rows.length)table.append(el('tbody',block.rows.map(row=>el('tr',block.head.map((_,column)=>cell('td',row[column]??'',column))))));
+    const wrap=el('div',[table]);wrap.className='markdown-table';return wrap;
+   }
+   if(block.kind==='code'){const pre=el('pre',[el('code',[block.text])]);pre.className='markdown-code';return pre;}
+   if(block.kind==='quote')return el('blockquote',build(block.blocks));
+   return el('hr');
+  });
+ }
+ function render(text){
+  const lines=String(text??'').replace(/\r\n?/g,'\n').split('\n').map(line=>line.replace(/^[ \t]+/,space=>space.replace(/\t/g,'    ')));
+  const root=el('div',build(parse(lines,0)));root.className='markdown';return root;
+ }
+ // A section's text begins with its own heading line; where the view already shows the section title,
+ // that first line is dropped once, as the web reader does.
+ const withoutTitleLine=(text,title)=>title&&/^ {0,3}#{1,6}[ \t]+\S/.test(text)?text.slice(text.indexOf('\n')+1||text.length):text;
+ const section=(text,title)=>render(withoutTitleLine(String(text??''),title));
+ return{render,section,safeLink};
+})();
+</script><script>
+'use strict';
+const uiConfig=JSON.parse(document.getElementById('durumari-ui-config').textContent);
+if(uiConfig.connectionLabel)document.getElementById('connection-label').textContent=uiConfig.connectionLabel;
+const statusEl=document.getElementById('status'),details=document.getElementById('details'),errorEl=document.getElementById('error');
+const browser=document.getElementById('browser'),projects=document.getElementById('projects'),retry=document.getElementById('retry');
+const pending=new Map();let counter=0,card=null,conversation=null,task=null,pollTimer=null,viewKey=null,globalView=false,navigation=true;
+const tones={stored:'success',retrieved:'success',displayed:'success',ready:'brand',pending:'warning',unknown:'warning',failed:'danger',forbidden:'danger',canceled:'danger',expired:'danger'};
+const labels={ready:'Context 작업 화면',stored:'저장 완료',retrieved:'문서 불러옴',unknown:'결과 확인 중',failed:'작업을 완료하지 못했습니다',forbidden:'현재 접근 권한이 없습니다',pending:'브라우저 작업 대기 중',displayed:'결과 화면 표시 완료',canceled:'작업 취소',expired:'작업 만료'};
+const setStatus=(text,tone='')=>{statusEl.textContent=text;statusEl.dataset.tone=tone;};
+function request(method,params){return new Promise((resolve,reject)=>{const id=++counter;const timer=setTimeout(()=>{pending.delete(id);reject(new Error('timeout'));},20000);pending.set(id,{resolve,reject,timer});window.parent.postMessage({jsonrpc:'2.0',id,method,params},'*');});}
+function notify(method,params){window.parent.postMessage({jsonrpc:'2.0',method,params},'*');}
+// Every view lives inside <main>, so its box is the content height: the result card, lists, readers,
+// the explorer and the domain views all report through this one observer, including async updates.
+// The height never depends on the iframe's own height, and a host that ignores the notification loses nothing.
+const sizeRoot=document.querySelector('main');let reportedHeight=0;
+function reportSize(force=false){const height=Math.ceil(sizeRoot.getBoundingClientRect().height);if(!height||(!force&&height===reportedHeight))return;reportedHeight=height;notify('ui/notifications/size-changed',{height});}
+if(typeof ResizeObserver==='function')new ResizeObserver(()=>reportSize()).observe(sizeRoot);
+function error(){clearResultDocument();setStatus('결과를 다시 확인할 수 없습니다','danger');details.textContent='';errorEl.hidden=false;errorEl.textContent='결과를 확인할 수 없습니다. 권한과 연결을 확인한 뒤 다시 시도해 주세요.';browser.disabled=false;projects.disabled=false;}
+function canonical(result){return result?.content?JSON.parse(result.content.find(item=>item.type==='text').text):result;}
+const selectionRejections=new Set(['project_unavailable','not_found','forbidden','membership_required','insufficient_scope','cloud_approval_required','cloud_approval_denied','connection_blocked','conversation_revision_conflict','catalog_changed','invalid_project_selection']);
+function decode(result){if(result.isError){let code;try{code=canonical(result)?.error?.code;}catch{};throw Object.assign(new Error('tool'),{publicCode:selectionRejections.has(code)?code:null});}return (result.structuredContent?.activity||result._meta?.activity)?result:canonical(result);}
+async function tool(name,args){name=(uiConfig.toolPrefix||'durumari_')+name.slice('durumari_'.length);return decode(await request('tools/call',{name,arguments:JSON.parse(JSON.stringify(args))}));}
+function projection(value){const rich=value?.structuredContent?.activity??value?._meta?.activity??value?.activity;if(rich)return rich;let original=value;try{if(value?.content)original=JSON.parse(value.content.find(part=>part.type==='text').text);}catch{return null;}if(original?.error)return{schema_version:1,action:'recover',outcome:['operation_unknown','durumari_operation_failed'].includes(original.error.code)?'unknown':['forbidden','insufficient_scope','membership_required'].includes(original.error.code)?'forbidden':'failed'};if(!original||typeof original.project_id!=='string'||!Number.isInteger(original.revision)||original.revision<1)return{schema_version:1,action:'recover',outcome:'unknown'};const read=typeof original.id==='string',stored=original.status==='stored'&&typeof original.context_id==='string';if(!read&&!stored)return null;return{schema_version:1,action:read?'read':'recover',outcome:read?'retrieved':'stored',project_id:original.project_id,context_id:read?original.id:original.context_id,revision:original.revision,title:read?original.title:undefined,coverage:original.coverage,partial:original.truncated===true};}
+function clearTask(){clearTimeout(pollTimer);task=null;card=null;viewKey=null;retry.hidden=true;}
+function show(value){if(window.durumariDomain?.accept(value)){clearTask();return;}window.durumariDomain?.clear();if(window.durumariExplorer?.accept(value)){clearTask();return;}window.durumariExplorer?.clear();showResultDocument(value);const a=projection(value);if(!a||a.schema_version!==1||!Object.hasOwn(labels,a.outcome))return;
+if(card?.project_ref!==a.project_ref||card?.request_key!==a.request_key){viewKey=null;task=null;clearTimeout(pollTimer);}card=a;if(a.outcome==='ready'){globalView=true;navigation=a.navigation!==false;ws.dataset.bound=String(!navigation);document.querySelector('.project-pane').hidden=!navigation;projects.textContent=navigation?'공간 선택':'문서 목록';}document.querySelector('.result').hidden=!resultPane.hidden||(globalView&&['ready','retrieved'].includes(a.outcome));errorEl.hidden=true;setStatus(labels[a.outcome],tones[a.outcome]||'');details.textContent='';
+if(a.context_id&&Number.isInteger(a.revision)){const list=document.createElement('dl');list.className='w-facts';const fact=(name,value)=>{const row=document.createElement('div');row.append(node('dt',name),node('dd',value));list.append(row);};details.append(node('p',(a.title||'Context')+' · 버전 '+a.revision,'w-title'));fact('공간',a.project_id);if(a.action==='read')fact('범위',a.coverage==='outline'?'문서 구성 조회':a.partial?'일부 범위 조회':'요청한 범위 조회');details.append(list);}
+browser.hidden=!(a.outcome==='stored'&&a.project_ref&&a.request_key);projects.hidden=!globalView;retry.hidden=!task;
+if(a.outcome==='ready'){document.getElementById('workspace').hidden=false;if(navigation&&!workspaceStarted){workspaceStarted=true;queueMicrotask(()=>loadProjects().catch(workspaceError));}else if(!navigation&&!workspaceStarted){workspaceStarted=true;queueMicrotask(()=>listDocuments().catch(workspaceError));}}
+if(a.outcome==='ready')details.textContent=navigation?'공간을 선택해 문서를 열 수 있습니다. 다른 대화의 공간 선택은 바뀌지 않습니다.':'이 연결에 고정된 공간의 문서를 볼 수 있습니다.';
+reportSize();}
+async function openLink(url){const target=new URL(url);if(target.protocol!=='https:'&&!(target.protocol==='http:'&&['localhost','127.0.0.1'].includes(target.hostname)))throw new Error('url');await request('ui/open-link',{url:target.href});}
+async function check(){const active=task;if(!active||active.checking)return;active.checking=true;
+try{const value=await tool(active.navigation?'durumari_interaction_status':'durumari_resource_status',{task_ref:active.ref,wait_seconds:0});if(task!==active)return;
+if(value.state==='pending'){setStatus(labels.pending,'warning');if(Date.now()<active.deadline&&!document.hidden)pollTimer=setTimeout(check,3000);return;}
+{const done=value.state==='completed';setStatus(done?(active.navigation?'공간 선택 완료':labels.displayed):(labels[value.state]||labels.unknown),done?'success':tones[value.state]||'warning');}clearTimeout(pollTimer);retry.hidden=true;task=null;
+if(!active.navigation&&['expired','canceled'].includes(value.state))viewKey=null;
+if(value.state==='completed'&&active.navigation&&value.result?.project_ref){conversation=value.result;try{await listDocuments();}catch{error();}}
+if(value.state==='completed'){void request('ui/update-model-context',{structuredContent:{task_ref:active.ref,state:value.state,result:value.result}}).catch(()=>{});}
+}catch{if(task===active){clearTimeout(pollTimer);error();retry.hidden=false;}}finally{active.checking=false;}}
+
+browser.onclick=async()=>{if(!card)return;browser.disabled=true;errorEl.hidden=true;try{viewKey??=crypto.randomUUID();const value=await tool('durumari_context_result_browser',{project_ref:card.project_ref,stored_request_key:card.request_key,request_key:viewKey});if(!value.task_ref)throw new Error('task');task={ref:value.task_ref,deadline:Date.parse(value.expires_at),navigation:false};await openLink(value.browser_url);retry.hidden=false;await check();}catch{error();}finally{browser.disabled=false;}};
+projects.onclick=()=>{document.getElementById('workspace').hidden=false;(navigation?loadProjects():listDocuments()).catch(workspaceError);};
+retry.onclick=()=>{clearTimeout(pollTimer);check();};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&task)check();else clearTimeout(pollTimer);});
+window.addEventListener('message',event=>{if(event.source!==window.parent)return;const value=event.data;if(!value||value.jsonrpc!=='2.0')return;if(value.id!==undefined&&pending.has(value.id)){const item=pending.get(value.id);pending.delete(value.id);clearTimeout(item.timer);value.error?item.reject(new Error('host')):item.resolve(value.result);return;}
+if(value.method==='ui/notifications/host-context-changed'){applyTheme(value.params);}if(value.method==='ui/notifications/tool-result'){show(value.params);}if(value.method==='ui/notifications/tool-input'){clearTask();globalView=false;ws.hidden=true;resetWorkspace();window.durumariDomain?.clear();window.durumariExplorer?.clear();clearResultDocument();document.querySelector('.result').hidden=false;setStatus('처리 중','brand');details.textContent='';}
+});
+const applyTheme=context=>{const theme=context&&context.theme;if(theme==='dark'||theme==='light')document.documentElement.dataset.theme=theme;};
+request('ui/initialize',{protocolVersion:'2026-01-26',appInfo:{name:'Durumari Context',version:'1.0.0'},appCapabilities:{availableDisplayModes:['inline','fullscreen']}}).then(result=>{applyTheme(result&&result.hostContext);notify('ui/notifications/initialized',{});reportSize(true);if(!card)setStatus('작업 결과를 기다리고 있습니다.');}).catch(error);
+
+let documentText='';let projectLoad=0,documentLoad=0;const startKey=crypto.randomUUID();
+let workspaceStarted=false,navConversation=null,selectedProject=null,epoch=0,projectRows=[],documentRows=[],projectAfter=null,contextAfter=null,documentAfter=null,currentDocument=null,selectionAttempt=null,navRetry=null;
+const ws=document.getElementById('workspace'),projectBox=document.getElementById('project-list'),catalogBox=document.getElementById('catalog'),reader=document.getElementById('document'),projectSearch=document.getElementById('project-search'),contextSearch=document.getElementById('context-search');
+let resultDocument=null,resultDocumentEpoch=0;
+const resultPane=document.getElementById('document-result'),resultBody=document.getElementById('result-document-body'),resultMore=document.getElementById('result-document-more');
+function clearResultDocument(){resultDocumentEpoch++;resultDocument=null;resultPane.hidden=true;resultBody.replaceChildren();resultMore.hidden=true;document.getElementById('result-document-title').textContent='';document.getElementById('result-document-meta').textContent='';document.getElementById('result-document-coverage').textContent='';document.getElementById('result-document-error').hidden=true;document.getElementById('note').textContent='결과 카드는 해당 작업 시점의 기록입니다.';}
+function showResultDocument(value){
+ clearResultDocument();if(globalView)return;
+ const activity=value?.structuredContent?.activity??value?._meta?.activity??value?.activity;
+ if(activity&&(activity.action!=='read'||activity.outcome!=='retrieved'))return;
+ let source;try{source=canonical(value);}catch{return;}
+ const doc=workspaceRuntime.document(source);if(!doc)return;
+ // A projection cannot replace the authoritative result or read a different document.
+ if(activity&&(activity.context_id!==doc.id||activity.project_id!==doc.project_id||activity.revision!==doc.revision))return;
+ // Continue with the exact target of the original read (account reads may use target_project_id).
+ resultDocument={...doc,target:typeof activity?.project_ref==='string'?{project_ref:activity.project_ref}:typeof activity?.target_project_id==='string'?{target_project_id:activity.target_project_id}:{}};
+ resultPane.hidden=false;document.getElementById('result-document-title').textContent=doc.title;
+ document.getElementById('result-document-meta').textContent='버전 '+doc.revision+' · 공간 '+doc.project_id;
+ document.getElementById('result-document-coverage').textContent=doc.coverage==='outline'?'문서 구성만 조회했습니다.':doc.partial?'일부 범위를 불러왔습니다.':'요청한 범위를 불러왔습니다.';
+ appendResultSections(doc);resultMore.hidden=!doc.after;
+}
+function appendResultSections(doc){
+ for(const section of doc.sections){
+  const block=node('section','');if(section.title)block.append(node('h3',section.title));
+  if(section.id||section.sha256){const provenance=node('details','');provenance.append(node('summary','출처 정보'),node('small',[section.id?'절 '+section.id:'',section.sha256?'SHA256 '+section.sha256:''].filter(Boolean).join(' · '),'section-ref'));block.append(provenance);}
+  if(section.text)block.append(durumariMarkdown.section(section.text,section.title));resultBody.append(block);
+ }
+ if(!resultBody.childNodes.length)resultBody.append(node('p','표시할 본문이 없습니다.','muted'));
+}
+resultMore.onclick=async()=>{
+ const current=resultDocument,token=resultDocumentEpoch;if(!current?.after)return;resultMore.disabled=true;document.getElementById('result-document-error').hidden=true;
+ try{
+  const value=await dataTool('durumari_context_read',{context_id:current.id,revision:current.revision,...current.target,after:current.after,budget_tokens:4000});
+  if(token!==resultDocumentEpoch)return;const next=workspaceRuntime.document(value);
+  if(!next||next.id!==current.id||next.project_id!==current.project_id||next.revision!==current.revision)throw new Error('read_identity_changed');
+  appendResultSections(next);resultDocument={...current,after:next.after};resultMore.hidden=!next.after;
+ }catch(cause){if(token!==resultDocumentEpoch)return;if(['forbidden','membership_required','insufficient_scope','project_unavailable','not_found'].includes(cause?.publicCode)){clearResultDocument();document.querySelector('.result').hidden=false;setStatus('현재 접근 권한을 확인할 수 없습니다','danger');details.textContent='';return;}const el=document.getElementById('result-document-error');el.textContent='이어서 읽지 못했습니다. 접근 권한과 연결을 확인한 뒤 다시 시도해 주세요.';el.hidden=false;
+ }finally{resultMore.disabled=false;}
+};
+function skeleton(){const box=document.createElement('div');box.className='w-skeleton';box.setAttribute('aria-hidden','true');box.append(...[0,1,2].map(()=>document.createElement('i')));return box;}
+function node(tag,text,className){const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;}
+function renderBody(text){
+ reader.replaceChildren();if(!text){reader.textContent='표시할 본문이 없습니다.';return;}
+ reader.append(durumariMarkdown.render(text));
+}
+// A link in a document opens through the host, which decides whether to open it; the address was already
+// limited to http, https and mailto when the link was built.
+document.addEventListener('click',event=>{const link=event.target instanceof Element?event.target.closest('.markdown a[href]'):null;if(!link)return;event.preventDefault();const url=durumariMarkdown.safeLink(link.getAttribute('href'));if(url)request('ui/open-link',{url}).catch(()=>{});});
+function clearReader(){documentText='';currentDocument=null;documentAfter=null;reader.replaceChildren();document.getElementById('reader-heading').textContent='Context를 선택해 주세요';document.getElementById('reader-meta').textContent='목록에서 문서를 열면 이곳에 본문이 표시됩니다.';document.getElementById('document-more').hidden=true;ws.dataset.reading='false';}
+function workspaceError(cause){const el=document.getElementById('workspace-error');el.textContent=['project_unavailable','not_found'].includes(cause?.publicCode)?'이 공간을 열 수 없습니다. 다른 공간을 선택하거나 목록을 새로 불러와 주세요.':selectionRejections.has(cause?.publicCode)?'공간 연결이나 접근 권한이 바뀌었습니다. 목록을 새로 불러온 뒤 다시 선택해 주세요.':'목록이나 문서를 불러오지 못했습니다. 접근 권한과 연결을 확인하고 다시 시도해 주세요.';el.hidden=false;document.getElementById('navigation-retry').hidden=!navRetry;}
+// A new tool invocation retires the hidden workspace: late replies of the previous epoch are dropped
+// and the next 'ready' result loads the navigation again instead of reusing stale state.
+function resetWorkspace(){epoch++;projectLoad++;documentLoad++;workspaceStarted=false;selectionAttempt=null;selectedProject=null;documentRows=[];contextAfter=null;navRetry=null;document.getElementById('contexts-more').hidden=true;document.getElementById('context-count').textContent='';catalogBox.replaceChildren(node('p','공간을 선택해 주세요.','empty'));clearReader();clearWorkspaceError();}
+function clearWorkspaceError(){document.getElementById('workspace-error').hidden=true;document.getElementById('navigation-retry').hidden=true;}
+async function dataTool(name,args){return canonical(await tool(name,args));}
+function rowIcon(name){const image=document.createElement('img');image.className='asset-icon';image.width=20;image.height=20;image.alt='';image.src={space:'__DURUMARI_ICON_SPACE__',doc:'__DURUMARI_ICON_DOC__',selected:'__DURUMARI_ICON_DOC_SELECTED__'}[name];return image;}
+function projectButtons(){projectBox.replaceChildren();const rows=projectRows.filter(row=>row.project_name.toLocaleLowerCase().includes(projectSearch.value.trim().toLocaleLowerCase()));for(const row of rows){const button=node('button','','w-line');const text=node('span','','row-text');text.append(node('strong',row.project_name),node('small',row.cloud_name||'공간'));button.append(rowIcon('space'),text);button.setAttribute('aria-current',String(selectedProject?.project_id===row.project_id));button.disabled=!!selectionAttempt;button.onclick=()=>selectProject(row).catch(workspaceError);projectBox.append(button);}if(!rows.length)projectBox.append(node('p','표시할 공간이 없습니다.','empty'));}
+async function loadProjects(more=false){if(selectionAttempt)return;const load=++projectLoad,query=projectSearch.value.trim();clearWorkspaceError();navRetry=()=>loadProjects(more);projectBox.setAttribute('aria-busy','true');if(!projectBox.childNodes.length)projectBox.append(skeleton());try{navConversation??=await dataTool('durumari_conversation_start',{request_key:startKey});const result=await dataTool('durumari_project_catalog',{conversation_ref:navConversation.conversation_ref,query:query||undefined,after:more?projectAfter:undefined});if(load!==projectLoad)return;if(Number.isInteger(result.revision))navConversation={...navConversation,...result};projectRows=more?[...projectRows,...(result.projects||[])]:result.projects||[];projectAfter=result.next_after;projectButtons();document.getElementById('projects-more').hidden=!projectAfter;}finally{projectBox.removeAttribute('aria-busy');projectBox.querySelector('.w-skeleton')?.remove();}}
+async function selectProject(project){if(selectionAttempt&&selectionAttempt.project.project_id!==project.project_id)return;clearWorkspaceError();const attempt=selectionAttempt??{project,key:crypto.randomUUID(),revision:navConversation.revision};selectionAttempt=attempt;navRetry=()=>selectProject(project);const token=++epoch;selectedProject=null;documentRows=[];contextAfter=null;document.getElementById('contexts-more').hidden=true;document.getElementById('context-count').textContent='';document.getElementById('context-heading').textContent='Context';catalogBox.replaceChildren(node('p','공간을 여는 중입니다.','empty'));clearReader();projectButtons();try{const result=await dataTool('durumari_project_select',{conversation_ref:navConversation.conversation_ref,expected_revision:attempt.revision,request_key:attempt.key,project_id:project.project_id});if(token!==epoch)return;if(!result.project_ref)throw new Error('selection');navConversation={...navConversation,...result};conversation=navConversation;selectedProject=project;selectionAttempt=null;projectButtons();document.getElementById('context-heading').textContent=project.project_name;contextSearch.value='';await listDocuments();}catch(cause){if(token!==epoch)return;if(selectionRejections.has(cause?.publicCode)){selectionAttempt=null;navRetry=()=>loadProjects();catalogBox.replaceChildren(node('p','다른 공간을 선택해 주세요.','empty'));projectButtons();}workspaceError(cause);throw cause;}}
+function contextButtons(){catalogBox.replaceChildren();document.getElementById('context-count').textContent=documentRows.length+'개 불러옴';for(const item of documentRows){const button=node('button','','w-line');const text=node('span','','row-text');text.append(node('strong',item.title),node('small','버전 '+item.revision+(item.kind?' · '+({spec:'명세',policy:'규칙',decision:'결정',note:'노트',report:'보고',plan:'계획',action:'작업 기록'}[item.kind]||'Context'):'')));button.append(rowIcon(currentDocument?.id===item.id?'selected':'doc'),text);button.setAttribute('aria-current',String(currentDocument?.id===item.id));button.onclick=()=>readDocument(item).catch(workspaceError);catalogBox.append(button);}if(!documentRows.length)catalogBox.append(node('p',contextSearch.value.trim()?'검색 결과가 없습니다.':'저장된 Context가 없습니다.','empty'));}
+async function listDocuments(more=false){if(navigation&&!selectedProject)return;clearWorkspaceError();const load=++documentLoad,token=epoch,ref=conversation?.project_ref;navRetry=()=>listDocuments(more);catalogBox.setAttribute('aria-busy','true');try{const query=contextSearch.value.trim();const result=await dataTool(query.length>=2?'durumari_context_search':'durumari_context_list',query.length>=2?{project_ref:ref,query,after:more?contextAfter:undefined,budget_tokens:3000}:{project_ref:ref,after:more?contextAfter:undefined});if(token!==epoch||load!==documentLoad)return;const rows=result.items||[];documentRows=more?[...documentRows,...rows]:rows;contextAfter=result.next_after;contextButtons();document.getElementById('contexts-more').hidden=contextAfter===null||contextAfter===undefined;}catch(cause){if(token!==epoch||load!==documentLoad)return;throw cause;}finally{if(token===epoch&&load===documentLoad)catalogBox.removeAttribute('aria-busy');}}
+async function readDocument(item,more=false){if(!item||(navigation&&!selectedProject))return;clearWorkspaceError();const token=epoch,ref=conversation?.project_ref;navRetry=()=>readDocument(item,more);if(!more){clearReader();currentDocument=item;reader.textContent='문서를 불러오는 중입니다.';}const selected=currentDocument;try{const result=await tool('durumari_context_read',{context_id:item.id,revision:item.revision,project_ref:ref,budget_tokens:4000,after:more?documentAfter:undefined});if(token!==epoch||currentDocument!==selected)return;const source=canonical(result);show(result);document.getElementById('reader-heading').textContent=source.title||item.title;document.getElementById('reader-meta').textContent='버전 '+item.revision+(selectedProject?' · '+selectedProject.project_name:'')+(source.truncated?' · 일부 범위':'');const body=(source.sections||[]).map(section=>section.text).join('\n\n');document.getElementById('reader-heading').tabIndex=-1;document.getElementById('reader-heading').focus({preventScroll:true});documentText=more?documentText+'\n\n'+body:body;renderBody(documentText);documentAfter=source.next_after;document.getElementById('document-more').hidden=!documentAfter;ws.dataset.reading='true';contextButtons();}catch(cause){if(token!==epoch||currentDocument!==selected)return;reader.replaceChildren();workspaceError();throw cause;}}
+projectSearch.oninput=()=>{clearTimeout(projectSearch.searchTimer);projectSearch.searchTimer=setTimeout(()=>loadProjects().catch(workspaceError),300);};
+contextSearch.oninput=()=>{clearTimeout(contextSearch.searchTimer);contextSearch.searchTimer=setTimeout(()=>listDocuments().catch(workspaceError),300);};
+document.getElementById('projects-more').onclick=()=>loadProjects(true).catch(workspaceError);
+document.getElementById('contexts-more').onclick=()=>listDocuments(true).catch(workspaceError);
+document.getElementById('document-more').onclick=()=>readDocument(currentDocument,true).catch(workspaceError);
+document.getElementById('reader-back').onclick=()=>{ws.dataset.reading='false';catalogBox.querySelector('[aria-current=true]')?.focus();};
+document.getElementById('navigation-retry').onclick=()=>{if(navRetry)navRetry().catch(workspaceError);};
+</script><script>/*__DURUMARI_EXPLORER__*/</script><script>/*__DURUMARI_DOMAINS__*/</script><script>/*__DURUMARI_GLOSSARY__*/</script><script>/*__DURUMARI_KNOWLEDGE__*/</script><script>/*__DURUMARI_COLLABORATION__*/</script><script>/*__DURUMARI_MATERIALS__*/</script><script>/*__DURUMARI_SECRETS__*/</script></body></html>

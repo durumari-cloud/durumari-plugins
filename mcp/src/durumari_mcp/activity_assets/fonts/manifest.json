@@ -1,0 +1,17 @@
+{
+  "source_sha256": "4259e7e9a172e634c2cb419d793b84148990316341e910443e5d10965b2c8f16",
+  "subsets": {
+    "basic": {
+      "bytes": 34732,
+      "codepoints": 430
+    },
+    "ui": {
+      "bytes": 74392,
+      "codepoints": 572
+    },
+    "extended": {
+      "bytes": 1184432,
+      "codepoints": 11030
+    }
+  }
+}

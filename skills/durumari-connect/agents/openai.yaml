@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 연결"
+  short_description: "이 폴더를 프로젝트에 연결·권한 추가·해제"
+policy:
+  allow_implicit_invocation: true

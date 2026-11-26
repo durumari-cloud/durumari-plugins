@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 공용 스킬"
+  short_description: "내 스킬을 프로젝트 공용 스킬로"
+policy:
+  allow_implicit_invocation: false

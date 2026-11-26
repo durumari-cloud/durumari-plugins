@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 비밀값"
+  short_description: "토큰·키를 값 노출 없이 등록·배포·사용"
+policy:
+  allow_implicit_invocation: true

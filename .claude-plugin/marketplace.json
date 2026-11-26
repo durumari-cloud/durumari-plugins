@@ -1,0 +1,14 @@
+{
+  "name": "durumari-local",
+  "description": "Durumari project Context plugin for local development and verification.",
+  "owner": {
+    "name": "Durumari"
+  },
+  "plugins": [
+    {
+      "name": "durumari",
+      "source": "./plugins/durumari-agent",
+      "category": "productivity"
+    }
+  ]
+}

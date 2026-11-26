@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "\"/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "commandWindows": "\"C:\\ABSOLUTE\\PATH\\plugins\\durumari-mcp\\.venv\\Scripts\\python.exe\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "statusMessage": "두루마리 · 연결 안내"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "\"/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "commandWindows": "\"C:\\ABSOLUTE\\PATH\\plugins\\durumari-mcp\\.venv\\Scripts\\python.exe\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "statusMessage": "두루마리 · 관련 문서 찾기"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "\"/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "commandWindows": "\"C:\\ABSOLUTE\\PATH\\plugins\\durumari-mcp\\.venv\\Scripts\\python.exe\" -m durumari_mcp project-hook --profile team-codex --client codex",
+            "statusMessage": "두루마리 · 저장 상태 확인"
+          }
+        ]
+      }
+    ]
+  }
+}

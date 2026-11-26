@@ -1,0 +1,23 @@
+{
+  "name": "durumari",
+  "version": "0.4.99",
+  "description": "Cloud Context for authorized projects over standard MCP and CLI.",
+  "author": {
+    "name": "Durumari"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "두루마리",
+    "shortDescription": "원하는 공간의 Cloud Context",
+    "longDescription": "계정을 연결하고 어느 작업 폴더에서든 권한 내 Context를 검색·읽기·저장합니다.",
+    "developerName": "Durumari",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "두루마리 연결 상태를 확인해줘",
+      "두루마리에서 이 공간의 최신 Context를 가져와줘"
+    ]
+  }
+}

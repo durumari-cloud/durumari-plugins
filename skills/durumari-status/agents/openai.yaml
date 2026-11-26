@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 상태"
+  short_description: "연결·미확정 저장·버전 확인"
+policy:
+  allow_implicit_invocation: true

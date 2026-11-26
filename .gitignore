@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.smoke-state/
+dist/
+build/
+hosts/agent/runtime/
+hosts/agent/evals/results/
+*.egg-info/

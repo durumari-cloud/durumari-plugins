@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "durumari_project": {
+      "type": "stdio",
+      "command": "/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python",
+      "args": [
+        "-m",
+        "durumari_mcp",
+        "project-serve",
+        "--profile",
+        "team-claude",
+        "--client",
+        "claude"
+      ]
+    }
+  }
+}

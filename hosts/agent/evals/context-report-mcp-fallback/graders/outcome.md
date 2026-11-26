@@ -1,0 +1,1 @@
+Search Durumari Context and list with order=created_desc before Jira or session history. Read a relevant current section before relying on it. If MCP fails, try context search/list/read using the approved workspace CLI. Do not reconnect automatically, substitute local memory or assert there is no report from an unavailable or partial result.

@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 업데이트"
+  short_description: "연결을 지키며 플러그인 업데이트"
+policy:
+  allow_implicit_invocation: true

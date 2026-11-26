@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 보관 문서 이관"
+  short_description: "선택한 보관 문서를 공유 Context로"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Real Linux credential store for the keyring tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gnome-keyring dbus-x11
+      - name: Sync
+        run: uv sync --project mcp --frozen
+      - name: Lint
+        run: uv run --project mcp --frozen ruff check .
+      - name: Skill copies match their source
+        run: uv run --project mcp --frozen python tools/skill-variants/render.py --check
+      - name: Tests
+        run: >-
+          sh tools/linux-keyring.sh
+          uv run --project mcp --frozen pytest mcp/tests hosts/agent/tests
+          -q -p no:cacheprovider --basetemp "${{ runner.temp }}/pytest"
+
+  build:
+    name: build release bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Sync
+        run: uv sync --project mcp --frozen
+      - name: Build release
+        run: >-
+          uv run --project mcp --frozen python tools/build_release.py
+          --service-origin https://app.durumari.cloud
+          --output dist/release --catalog-output dist/catalog
+      - name: Build public Chat draft
+        run: >-
+          uv run --project mcp --frozen python hosts/chat/public/build.py
+          --output "$PWD/dist/chat-public.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.sha }}
+          path: dist/
+          retention-days: 14

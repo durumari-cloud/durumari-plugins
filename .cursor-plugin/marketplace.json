@@ -1,0 +1,16 @@
+{
+  "name": "durumari-local",
+  "owner": {
+    "name": "Durumari"
+  },
+  "metadata": {
+    "description": "Durumari project Context plugin for local development and verification."
+  },
+  "plugins": [
+    {
+      "name": "durumari",
+      "source": "plugins/durumari-agent",
+      "description": "Project-bound Cloud Context for Agents over standard MCP and CLI."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+Durumari plugins
+Copyright 2026 The Durumari authors
+
+This product includes software developed as part of the Durumari project
+(https://app.durumari.cloud), licensed under the Apache License, Version 2.0.
+
+Trademarks: "Durumari", "두루마리" and the Durumari logo are trademarks of the
+Durumari project. The Apache License, Version 2.0 does not grant permission to use
+them (see section 6 of the License), except as required for reasonable and customary
+use in describing the origin of the work.
+
+Third-party components:
+- mcp/src/durumari_mcp/activity_assets/fonts: Wanted Sans, licensed under the SIL
+  Open Font License 1.1 (see OFL.txt in that folder).

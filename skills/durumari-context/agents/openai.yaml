@@ -1,0 +1,5 @@
+interface:
+  display_name: "두루마리 Context"
+  short_description: "프로젝트 맥락 찾기·읽기·저장"
+policy:
+  allow_implicit_invocation: true

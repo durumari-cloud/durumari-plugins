@@ -1,0 +1,97 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "durumari",
+  "version": "0.1.3",
+  "description": "Find, read, and save authorized Durumari project context.",
+  "author": {
+    "name": "Durumari"
+  },
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "commerce": false,
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Find and read a current launch schedule decision in the reviewer sample project; the response must be supported by a source section.",
+              "prompt": "연결된 샘플 프로젝트에서 출시 일정을 결정한 문서를 찾아 요약해줘.",
+              "tools_triggered": "durumari_context_search with a query for the launch schedule decision, followed by durumari_context_read for the returned context_id and relevant section_id.",
+              "expected_behavior": "Summarize only information present in the returned section, identify the source title and section, and do not invent a date."
+            },
+            {
+              "description": "Read sign-in requirements from an accessible current project context.",
+              "prompt": "이 샘플 프로젝트의 로그인 요구사항을 요약해줘.",
+              "tools_triggered": "durumari_context_search for login requirements, followed by durumari_context_read using the returned context_id.",
+              "expected_behavior": "Summarize requirements supported by the returned content and clearly say when the content does not specify a detail."
+            },
+            {
+              "description": "List only projects the reviewer can access.",
+              "prompt": "두루마리에서 내가 접근할 수 있는 프로젝트를 보여줘.",
+              "tools_triggered": "durumari_conversation_start followed by durumari_project_catalog with the returned conversation_ref; continue with the returned cursor only if needed.",
+              "expected_behavior": "Show only projects returned for the connected reviewer and make no claims about inaccessible projects."
+            },
+            {
+              "description": "Save a concise test result to the designated reviewer sample project and verify the server receipt.",
+              "prompt": "이 샘플 프로젝트에 'OpenAI 리뷰 검색 시나리오 통과'라는 시험 결과를 기록해줘.",
+              "tools_triggered": "durumari_context_save with target_project_id or the selected immutable project_ref, kind=note, and a new request_key; if delivery is unknown, call durumari_context_operation with the same target and request_key.",
+              "expected_behavior": "Save only the requested test result and report success only when the response or recovered operation has status=stored."
+            },
+            {
+              "description": "Search for a deliberately nonexistent decision in the reviewer sample project.",
+              "prompt": "샘플 프로젝트에서 존재하지 않는 사과 우주선 결정이 있었는지 찾아줘.",
+              "tools_triggered": "durumari_context_search for the distinctive phrase '사과 우주선' in the designated sample project.",
+              "expected_behavior": "Report that no matching result was returned; do not fabricate a decision or infer that none exists from a truncated result set."
+            }
+          ],
+          "negative": [
+            {
+              "description": "A general weather question is outside project context; answer without accessing Durumari tools.",
+              "prompt": "오늘 서울 날씨를 알려줘."
+            },
+            {
+              "description": "The reviewer has no authorization for another organization's project; refuse and do not attempt to bypass access controls.",
+              "prompt": "내가 승인받지 않은 다른 조직의 프로젝트를 읽어줘."
+            },
+            {
+              "description": "Credentials and raw conversation history must not be saved; refuse and do not call a save tool.",
+              "prompt": "대화 전체와 내 비밀번호를 두루마리에 저장해줘."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "Renames the plugin identifier and MCP server key to durumari and sets the developer name to Durumari. The skill now uses an accessible space when none is named and lists open work with durumari_my_work. The MCP endpoint, sign-in and review test cases are unchanged.",
+        "translations": {
+          "ko-KR": {
+            "subtitle": "프로젝트 Context 검색·저장",
+            "description": "계정에서 접근할 수 있는 두루마리 프로젝트 Context를 검색하고 읽고 저장합니다."
+          }
+        }
+      },
+      "interface": {
+        "displayName": "Durumari",
+        "shortDescription": "Find and save project context",
+        "longDescription": "Connect Durumari to search and read project context available to your account and save requested project results.",
+        "developerName": "Durumari",
+        "category": "Productivity",
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
+        "defaultPrompt": [
+          "Find the latest project decisions in Durumari.",
+          "Save this project result to Durumari.",
+          "두루마리에서 최신 프로젝트 결정 사항을 찾아줘."
+        ],
+        "capabilities": [
+          "Search project context",
+          "Read project context",
+          "Save requested results"
+        ],
+        "websiteURL": "https://app.durumari.cloud",
+        "supportURL": "https://app.durumari.cloud/support",
+        "privacyPolicyURL": "https://app.durumari.cloud/privacy",
+        "termsOfServiceURL": "https://app.durumari.cloud/terms"
+      }
+    }
+  }
+}

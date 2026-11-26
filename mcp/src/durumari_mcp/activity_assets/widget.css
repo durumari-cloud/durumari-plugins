@@ -1,0 +1,137 @@
+/* 두루마리 채팅 위젯 공용 스타일 (UI v3).
+   웹의 v3 표면(web/src/components/ui/surface.css: .ui-card .ui-facts .ui-lines .ui-chip .ui-empty)을 위젯 폭에 맞춘 사본이다.
+   웹 클래스 이름 ui-* 는 w-* 로 바꾸었고, 색·간격·글꼴은 tokens.css(웹과 같은 생성 토큰)만 쓴다. 색을 직접 쓰지 않는다.
+   레퍼런스: OpenAI Apps SDK 디자인 지침(인라인 카드는 간결하게, 한 카드에 한 가지 일, 안쪽 스크롤 최소, 호스트 테마를 따름),
+   Claude MCP 앱 지침(좁은 폭에서도 읽힘), Linear·Notion 임베드 카드(회색 바탕 위 흰 카드, 이름–값 줄, 상태 칩).
+   폭 기준은 화면이 아니라 컨테이너(main)다. 호스트가 위젯 폭을 바꿔도(인라인 320~480, 전체 화면) 맞게 바뀐다. */
+:root{
+  color-scheme:light dark;
+  font:14px/1.5 'Wanted Sans',system-ui,sans-serif;color:var(--text);background:var(--surface-app);
+  /* 상태색: 배경은 상태색을 카드색에 섞어 만들어 밝은 테마·어두운 테마 모두에서 글자가 읽힌다. */
+  --w-card-radius:14px;
+  --w-brand-text:var(--brand-strong);
+  --w-success-text:var(--success);
+  --w-warning-text:var(--warning);
+  --w-danger-text:var(--danger);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--w-warning-text:color-mix(in srgb,var(--warning) 35%,var(--text))}}
+:root[data-theme="dark"]{--w-warning-text:color-mix(in srgb,var(--warning) 35%,var(--text))}
+*{box-sizing:border-box}
+html{background:var(--surface-app)}
+body{margin:0;background:var(--surface-app);color:var(--text);container:widget/inline-size}
+main{max-width:1100px;margin:0 auto;padding:12px;display:grid;gap:12px;align-content:start;background:var(--surface-app)}
+[hidden]{display:none!important}
+h1,h2,h3,h4,p{margin:0}
+p{overflow-wrap:anywhere}
+small,.muted{color:var(--text-muted);font-size:13px}
+.asset-icon{width:20px;height:20px;flex:none;object-fit:contain}
+
+/* 머리줄: 앱 이름은 호스트가 보여 주므로 한 줄로만 둔다. */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);min-height:28px;padding:0 4px}
+.brand{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+header.top h1{font-size:14px;line-height:1.4;font-weight:700}
+header.top small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+
+/* 카드 */
+.w-card{min-width:0;padding:16px;border:1px solid var(--border-subtle);border-radius:var(--w-card-radius);background:var(--surface);display:grid;gap:12px;align-content:start}
+.w-card[data-flush]{padding:0;overflow:hidden;gap:0}
+.w-card-title,.w-card>h3{font-size:15px;line-height:1.4;font-weight:700;color:var(--text)}
+.w-card-lead,.w-lead{color:var(--text-muted);font-size:13px;line-height:1.6}
+/* 카드 안의 하위 묶음은 상자를 또 두르지 않고 얇은 선으로만 나눈다(카드 속 카드 금지). */
+.w-row{min-width:0;display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--border-subtle)}
+.w-row>h3{font-size:14px;line-height:1.4;font-weight:600}
+.w-card>.w-row:first-child{padding-top:0;border-top:0}
+.w-stack{display:grid;gap:12px;min-width:0}
+
+/* 화면 제목(카드 바깥) */
+.w-view-head{display:grid;gap:2px;padding:4px 4px 0}
+.w-view-head h2{font-size:17px;line-height:1.4;font-weight:700}
+.w-view-head p{color:var(--text-muted);font-size:13px;line-height:1.6}
+
+/* 이름–값 */
+.w-facts{display:grid;gap:8px;margin:0}
+.w-facts>div{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:baseline;gap:8px}
+.w-facts dt{color:var(--text-muted);font-size:13px;font-weight:600}
+.w-facts dd{margin:0;min-width:0;font-size:13px;overflow-wrap:anywhere}
+
+/* 상태 칩: 글자가 항상 있다. 색만으로 뜻을 전하지 않는다. */
+.w-chips{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.w-chip{display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:0 8px;border-radius:var(--radius-pill);background:var(--surface-sunken);color:var(--text-muted);font-size:12px;font-weight:700;line-height:1.4;max-width:100%;overflow-wrap:anywhere}
+.w-chip[data-tone=brand]{background:var(--brand-faint);color:var(--w-brand-text)}
+.w-chip[data-tone=success]{background:color-mix(in srgb,var(--success-fill) 16%,var(--surface));color:var(--w-success-text)}
+.w-chip[data-tone=warning]{background:color-mix(in srgb,var(--warning-border) 22%,var(--surface));color:var(--w-warning-text)}
+.w-chip[data-tone=danger]{background:color-mix(in srgb,var(--danger) 13%,var(--surface));color:var(--w-danger-text)}
+
+/* 결과 상태 줄: 점 + 글자 */
+.w-status{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;line-height:1.4}
+.w-status::before{content:'';flex:none;width:8px;height:8px;border-radius:var(--radius-pill);background:var(--border-strong)}
+.w-status[data-tone=success]::before{background:var(--success-fill)}
+.w-status[data-tone=warning]::before{background:var(--warning-border)}
+.w-status[data-tone=danger]::before{background:var(--danger)}
+.w-status[data-tone=brand]::before{background:var(--brand)}
+.w-title{font-weight:600;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+
+/* 안내·오류 줄 */
+.w-callout{padding:10px 12px;border-radius:var(--radius-md);background:var(--surface-sunken);color:var(--text-muted);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.w-callout[role=alert],.w-callout[data-tone=danger]{background:color-mix(in srgb,var(--danger) 10%,var(--surface));color:var(--w-danger-text)}
+
+/* 빈 상태·불러오는 중: 무엇이 없는지 한 문장으로 말한다. */
+.w-empty{display:grid;justify-items:center;gap:6px;padding:28px 12px;color:var(--text-muted);text-align:center;font-size:13px}
+.w-empty strong{color:var(--text);font-size:14px}
+.empty{padding:20px 8px;color:var(--text-muted);text-align:center;font-size:13px}
+.w-skeleton{display:grid;gap:10px}
+.w-skeleton i{display:block;height:44px;border-radius:var(--radius-md);background:var(--surface-sunken);animation:w-pulse 1.2s ease-in-out infinite}
+@keyframes w-pulse{50%{opacity:.5}}
+
+/* 버튼·입력 */
+button,input{font:inherit}
+button{cursor:pointer;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);color:var(--text);padding:0 14px;min-height:40px;font-weight:600;font-size:13px}
+button:hover{background:var(--surface-hover)}
+button:disabled{opacity:.55;cursor:wait}
+button:focus-visible,input:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+.w-actions,.actions{display:flex;flex-wrap:wrap;gap:8px}
+.w-actions button:first-child,.actions button:first-child,button[data-primary]{background:var(--brand);border-color:var(--brand);color:var(--text-inverse)}
+.w-actions button:first-child:hover,.actions button:first-child:hover,button[data-primary]:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+.w-card>button,.w-row>button,.w-card>.w-actions{justify-self:start}
+input{width:100%;min-width:0;min-height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-app);color:inherit}
+input::placeholder{color:var(--text-muted)}
+input[type=checkbox]{width:18px;height:18px;min-height:0;padding:0;flex:none;accent-color:var(--brand)}
+label:has(>input[type=checkbox]){display:flex;align-items:center;gap:var(--space-2);margin:0;font-size:13px}
+label{display:block;margin-bottom:var(--space-2)}
+details{min-width:0}
+details>summary{cursor:pointer;color:var(--text-muted);font-size:13px;min-height:24px}
+details>p,details>small{display:block;margin-top:6px;color:var(--text-muted);font-size:12px;overflow-wrap:anywhere}
+
+/* 목록 줄: 누르면 열리는 항목 */
+.w-lines{display:grid;margin:0;padding:0}
+.w-line{display:flex;align-items:flex-start;gap:10px;width:100%;min-width:0;min-height:52px;padding:10px 12px;border:0;border-radius:var(--radius-md);background:transparent;color:var(--text);text-align:left;font-weight:400;overflow-wrap:anywhere}
+.w-line:hover{background:var(--surface-hover)}
+.w-line[aria-current=true]{background:var(--brand-faint);color:var(--w-brand-text)}
+.w-line .row-text{min-width:0}
+.w-line strong{font-size:14px;font-weight:600;line-height:1.5}
+.w-line small{margin-top:2px;font-size:12px}
+.w-line .asset-icon{margin-top:2px}
+.w-line:disabled{opacity:.6}
+
+/* 마크다운 본문: 웹 읽기 화면(.markdown)의 규칙에 위젯 색을 입힌다. */
+main .markdown{white-space:normal;overflow-wrap:anywhere;min-width:0;font-size:14px;line-height:1.7}
+main .markdown>:first-child{margin-top:0}main .markdown>:last-child{margin-bottom:0}
+main .markdown :is(h3,h4,h5,h6){margin:var(--space-5) 0 var(--space-2);line-height:1.45;font-weight:700;color:var(--text)}
+main .markdown h3{font-size:17px}main .markdown h4{font-size:var(--text-md)}main .markdown :is(h5,h6){font-size:15px}
+main .markdown :is(p,ul,ol,blockquote),main .markdown-table,main .markdown .markdown-code{margin:0 0 var(--space-3)}
+main .markdown p{white-space:normal}
+main .markdown :is(ul,ol){padding-left:22px;list-style:disc}main .markdown ol{list-style:decimal}main .markdown ul ul{list-style:circle}
+main .markdown li>:last-child{margin-bottom:0}main .markdown li>p{margin:0}
+main .markdown blockquote{padding:2px 0 2px 14px;border-left:3px solid var(--brand-border);color:var(--text-muted)}
+main .markdown hr{border:0;border-top:1px solid var(--border);margin:18px 0}
+main .markdown a{color:var(--brand);text-decoration:underline;text-underline-offset:2px}
+main .markdown code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--surface-app);border-radius:4px;padding:1px 5px}
+main .markdown .markdown-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.6;white-space:pre;overflow-wrap:normal;overflow-x:auto;background:var(--surface-app);border:1px solid var(--border);border-radius:8px;padding:var(--space-3) 14px}
+main .markdown .markdown-code code{background:none;padding:0;font-size:inherit}
+main .markdown-table{max-width:100%;overflow-x:auto}
+main .markdown table{border-collapse:collapse;font-size:13px;line-height:1.6}
+main .markdown :is(th,td){border:1px solid var(--border);padding:6px 10px;text-align:left;vertical-align:top;overflow-wrap:normal;word-break:keep-all}
+main .markdown th{background:var(--surface-app);font-weight:600}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@container widget (min-width:640px){main{padding:16px;gap:16px}.w-card{padding:20px}.w-facts>div{grid-template-columns:88px minmax(0,1fr)}}

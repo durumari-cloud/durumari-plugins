@@ -1,0 +1,10 @@
+{
+  "name": "durumari",
+  "version": "0.4.99",
+  "description": "Cloud Context for authorized projects over standard MCP and CLI.",
+  "author": {
+    "name": "Durumari"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./mcp-claude.json"
+}

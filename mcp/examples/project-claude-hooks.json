@@ -1,0 +1,65 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python",
+            "args": [
+              "-m",
+              "durumari_mcp",
+              "project-hook",
+              "--profile",
+              "team-claude",
+              "--client",
+              "claude"
+            ]
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python",
+            "args": [
+              "-m",
+              "durumari_mcp",
+              "project-hook",
+              "--profile",
+              "team-claude",
+              "--client",
+              "claude"
+            ]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 3,
+            "command": "/ABSOLUTE/PATH/plugins/durumari-mcp/.venv/bin/python",
+            "args": [
+              "-m",
+              "durumari_mcp",
+              "project-hook",
+              "--profile",
+              "team-claude",
+              "--client",
+              "claude"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
+}

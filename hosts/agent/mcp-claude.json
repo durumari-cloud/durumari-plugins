@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "durumari": {
+      "type": "http",
+      "url": "https://mcp.durumari.cloud/mcp"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "durumari-local",
+  "interface": {
+    "displayName": "두루마리"
+  },
+  "plugins": [
+    {
+      "name": "durumari",
+      "source": {
+        "source": "local",
+        "path": "./plugins/durumari-agent"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ],
+  "description": ""
+}

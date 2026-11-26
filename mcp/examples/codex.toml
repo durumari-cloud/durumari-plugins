@@ -1,0 +1,5 @@
+# Replace only the executable path/profile. Credentials belong in the OS store.
+[mcp_servers.durumari]
+command = 'C:\dev\durumari\plugins\durumari-mcp\.venv\Scripts\python.exe'
+args = ["-m", "durumari_mcp", "serve", "--profile", "work-codex", "--client", "codex"]
+startup_timeout_sec = 30

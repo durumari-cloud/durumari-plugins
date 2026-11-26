@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "durumari": {
+      "type": "stdio",
+      "command": "C:\\dev\\durumari\\plugins\\durumari-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "durumari_mcp", "serve", "--profile", "work-claude", "--client", "claude"]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "durumari",
+  "version": "0.1.0",
+  "description": "Find and read authorized Durumari project context, or save an explicitly requested shared result.",
+  "author": {"name": "Durumari"}
+}
