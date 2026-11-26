@@ -33,7 +33,7 @@ def code_page(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "name", ["SSAFY 창업 _ Durumari", "プロジェクト", "rocket 🚀", "with space"]
+    "name", ["Team 창업 _ Durumari", "プロジェクト", "rocket 🚀", "with space"]
 )
 def test_non_ascii_git_root_stays_in_scope(tmp_path, code_page, name):
     root = tmp_path / name
