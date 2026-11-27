@@ -66,3 +66,27 @@ jobs:
           name: release-${{ github.sha }}
           path: dist/
           retention-days: 14
+
+  commit-emails:
+    name: commit emails
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Only GitHub noreply or bot addresses
+        # A public repository publishes every author and committer address. Personal
+        # addresses are refused; the log names offending commits, never the address.
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          range="$HEAD"
+          if git cat-file -e "$BASE^{commit}" 2>/dev/null; then range="$BASE..$HEAD"; fi
+          bad=$(git log --format='%h %ae %ce' "$range" | awk '{ for (i = 2; i <= 3; i++) if ($i !~ /@users\.noreply\.github\.com$/ && $i != "noreply@github.com") { print $1; break } }')
+          if [ -n "$bad" ]; then
+            echo "::error::Use a GitHub noreply address (Settings > Emails). Commits: $(echo $bad | tr '\n' ' ')"
+            exit 1
+          fi
