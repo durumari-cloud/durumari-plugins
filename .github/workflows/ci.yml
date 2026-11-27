@@ -76,17 +76,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Only GitHub noreply or bot addresses
-        # A public repository publishes every author and committer address. Personal
-        # addresses are refused; the log names offending commits, never the address.
+      - name: Only noreply, bot or opensource@durumari.cloud addresses
+        # A public repository publishes every author and committer address. Only GitHub
+        # noreply, GitHub itself and opensource@durumari.cloud are accepted; the log
+        # names offending commits, never the address.
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           range="$HEAD"
           if git cat-file -e "$BASE^{commit}" 2>/dev/null; then range="$BASE..$HEAD"; fi
-          bad=$(git log --format='%h %ae %ce' "$range" | awk '{ for (i = 2; i <= 3; i++) if ($i !~ /@users\.noreply\.github\.com$/ && $i != "noreply@github.com") { print $1; break } }')
+          bad=$(git log --format='%h %ae %ce' "$range" | awk '{ for (i = 2; i <= 3; i++) if ($i !~ /@users\.noreply\.github\.com$/ && $i != "noreply@github.com" && $i != "opensource@durumari.cloud") { print $1; break } }')
           if [ -n "$bad" ]; then
-            echo "::error::Use a GitHub noreply address (Settings > Emails). Commits: $(echo $bad | tr '\n' ' ')"
+            echo "::error::Commit as opensource@durumari.cloud or a GitHub noreply address. Commits: $(echo $bad | tr '\n' ' ')"
             exit 1
           fi
